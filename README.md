@@ -1,86 +1,226 @@
-# Votação
+# Sistema de Votação Cooperativa
 
-## Objetivo
+API REST + Frontend React para gerenciar sessões de votação em assembleias cooperativas.
 
-No cooperativismo, cada associado possui um voto e as decisões são tomadas em assembleias, por votação. Imagine que você deve criar uma solução we para gerenciar e participar dessas sessões de votação.
-Essa solução deve ser executada na nuvem e promover as seguintes funcionalidades através de uma API REST / Front:
+---
 
-- Cadastrar uma nova pauta
-- Abrir uma sessão de votação em uma pauta (a sessão de votação deve ficar aberta por
-  um tempo determinado na chamada de abertura ou 1 minuto por default)
-- Receber votos dos associados em pautas (os votos são apenas 'Sim'/'Não'. Cada associado
-  é identificado por um id único e pode votar apenas uma vez por pauta)
-- Contabilizar os votos e dar o resultado da votação na pauta
+## Stack
 
-Para fins de exercício, a segurança das interfaces pode ser abstraída e qualquer chamada para as interfaces pode ser considerada como autorizada. A solução deve ser construída em java com Spring-boot e Angular/React conforme orientação, mas os frameworks e bibliotecas são de livre escolha (desde que não infrinja direitos de uso).
+| Camada    | Tecnologia                                |
+|-----------|-------------------------------------------|
+| Backend   | Java 17, Spring Boot 3.2, Spring Data JPA |
+| Banco     | H2 (dev) / PostgreSQL (prod)              |
+| Frontend  | React 18, TypeScript, Vite                |
+| Docs API  | SpringDoc OpenAPI (Swagger UI)            |
+| Container | Docker + Docker Compose                   |
+| Testes BE | JUnit 5, Mockito, Gatling 3.10            |
+| Testes FE | Vitest, Testing Library, MSW              |
 
-É importante que as pautas e os votos sejam persistidos e que não sejam perdidos com o restart da aplicação.
+---
 
-## Como proceder
+## Pré-requisitos
 
-Por favor, realize o FORK desse repositório e implemente sua solução no FORK em seu repositório GItHub, ao final, notifique da conclusão para que possamos analisar o código implementado.
+| Ferramenta | Versão mínima |
+|------------|---------------|
+| Java       | 17            |
+| Maven      | 3.8           |
+| Node       | 18            |
+| Docker     | 20 (opcional) |
 
-Lembre de deixar todas as orientações necessárias para executar o seu código.
+---
 
-### Tarefas bônus
+## Como executar
 
-- Tarefa Bônus 1 - Integração com sistemas externos
-  - Criar uma Facade/Client Fake que retorna aleátoriamente se um CPF recebido é válido ou não.
-  - Caso o CPF seja inválido, a API retornará o HTTP Status 404 (Not found). Você pode usar geradores de CPF para gerar CPFs válidos
-  - Caso o CPF seja válido, a API retornará se o usuário pode (ABLE_TO_VOTE) ou não pode (UNABLE_TO_VOTE) executar a operação. Essa operação retorna resultados aleatórios, portanto um mesmo CPF pode funcionar em um teste e não funcionar no outro.
+### Sem Docker (desenvolvimento local)
 
+```bash
+# 1. Backend
+cd backend
+mvn spring-boot:run
+# (Ou apenas "Run" na main class pelo Intellij)
+# Acesse:  http://localhost:8080
+# Swagger: http://localhost:8080/swagger-ui.html
+# H2:      http://localhost:8080/h2-console
+
+# 2. Frontend (outro terminal)
+cd frontend
+npm install
+#(Caso não funcione, use:)
+npm install --ignore-scripts
+#(Caso não funcione, use:)
+npx vite --debug
+#(Caso não funcione, use:)
+npx vite --config vite.config.js
+# Acesse: http://localhost:3000
 ```
-// CPF Ok para votar
-{
-    "status": "ABLE_TO_VOTE
-}
-// CPF Nao Ok para votar - retornar 404 no client tb
-{
-    "status": "UNABLE_TO_VOTE
-}
+
+### Com Docker — perfil dev (H2, mais simples)
+
+```bash
+docker-compose up --build
+# Frontend: http://localhost
+# Backend:  http://localhost:8080
+# Swagger:  http://localhost:8080/swagger-ui.html
 ```
 
-Exemplos de retorno do serviço
+### Com Docker — perfil prod (PostgreSQL)
 
-### Tarefa Bônus 2 - Performance
+```bash
+docker-compose --profile prod up --build
+```
 
-- Imagine que sua aplicação possa ser usada em cenários que existam centenas de
-  milhares de votos. Ela deve se comportar de maneira performática nesses
-  cenários
-- Testes de performance são uma boa maneira de garantir e observar como sua
-  aplicação se comporta
+---
 
-### Tarefa Bônus 3 - Versionamento da API
+## Persistência dos dados
 
-○ Como você versionaria a API da sua aplicação? Que estratégia usar?
+| Modo             | Onde ficam os dados           | Sobrevive ao restart? |
+|------------------|-------------------------------|-----------------------|
+| Sem Docker       | `backend/data/votingdb.mv.db` | ✅ Sim                |
+| Docker dev (H2)  | Volume Docker `h2-data`       | ✅ Sim                |
+| Docker prod (PG) | Volume Docker `pg-data`       | ✅ Sim                |
 
-## O que será analisado
+> `docker-compose down` — mantém os dados
+> `docker-compose down -v` — apaga os volumes
 
-- Simplicidade no design da solução (evitar over engineering)
-- Organização do código
-- Arquitetura do projeto
-- Boas práticas de programação (manutenibilidade, legibilidade etc)
-- Possíveis bugs
-- Tratamento de erros e exceções
-- Explicação breve do porquê das escolhas tomadas durante o desenvolvimento da solução
-- Uso de testes automatizados e ferramentas de qualidade
-- Limpeza do código
-- Documentação do código e da API
-- Logs da aplicação
-- Mensagens e organização dos commits
-- Testes
-- Layout responsivo
+---
 
-## Dicas
+## Testes
 
-- Teste bem sua solução, evite bugs
+### Backend — unitários e integração
 
-  Observações importantes
-- Não inicie o teste sem sanar todas as dúvidas
-- Iremos executar a aplicação para testá-la, cuide com qualquer dependência externa e
-  deixe claro caso haja instruções especiais para execução do mesmo
-  Classificação da informação: Uso Interno
+```bash
+cd backend
+mvn test
+```
 
+Cobertura:
+- `AgendaServiceTest` — 5 testes unitários de regras de pauta
+- `VoteServiceTest` — 4 testes unitários de regras de votação
+- `AgendaControllerIT` — 15 testes de integração (ponta a ponta com H2)
 
+### Frontend — componentes e API
 
-# desafio-votacao
+```bash
+cd frontend
+
+# Instalar dependências (primeira vez)
+npm install --ignore-scripts
+
+# Rodar os testes
+npx vitest run --config vitest.config.ts
+```
+
+Cobertura:
+- `StatusBadge.test` — 3 testes de renderização
+- `CountdownTimer.test` — 4 testes incluindo timer fake
+- `api.test` — 7 testes do cliente HTTP com MSW
+- `HomePage.test` — 6 testes de comportamento e filtros
+
+### Performance — Gatling
+
+```bash
+cd backend
+
+# 1. Sobe o backend com profile perf (H2 in-memory, pool otimizado, CPF facade desabilitada)
+# No IntelliJ: Edit Configurations → Active profiles → perf
+# Ou no terminal:
+mvn spring-boot:run -Dspring-boot.run.profiles=perf
+
+# 2. Em outro terminal, rode os testes de carga
+mvn gatling:test                   # smoke — 10 usuários, 30s (padrão)
+mvn gatling:test -DSCENARIO=load   # load  — 500 usuários, ~5min
+mvn gatling:test -DSCENARIO=stress # stress — 2.000 usuários, ~5min
+
+# 3. Abra o relatório HTML
+# target/gatling/votingsimulation-<timestamp>/index.html
+```
+
+---
+
+## Endpoints da API (v1)
+
+| Método | Endpoint                                | Descrição                      |
+|--------|-----------------------------------------|--------------------------------|
+| POST   | `/api/v1/agendas`                       | Criar pauta                    |
+| GET    | `/api/v1/agendas`                       | Listar todas as pautas         |
+| GET    | `/api/v1/agendas/{id}`                  | Buscar pauta por ID            |
+| POST   | `/api/v1/agendas/{id}/sessions`         | Abrir sessão de votação        |
+| POST   | `/api/v1/agendas/{id}/votes`            | Registrar voto                 |
+| GET    | `/api/v1/agendas/{id}/results`          | Resultado da votação           |
+| GET    | `/api/v1/users/{cpf}/voting-eligibility`| Validar CPF (Bônus 1)         |
+
+### Exemplos de uso
+
+```bash
+# Criar pauta
+curl -X POST http://localhost:8080/api/v1/agendas \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Aprovação do orçamento 2025", "description": "Votação do orçamento anual"}'
+
+# Abrir sessão (5 minutos)
+curl -X POST http://localhost:8080/api/v1/agendas/1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"durationMinutes": 5}'
+
+# Abrir sessão (1 minuto — default)
+curl -X POST http://localhost:8080/api/v1/agendas/1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+# Votar
+curl -X POST http://localhost:8080/api/v1/agendas/1/votes \
+  -H "Content-Type: application/json" \
+  -d '{"cpf": "52998224725", "choice": "YES"}'
+
+# Resultado
+curl http://localhost:8080/api/v1/agendas/1/results
+```
+
+---
+
+## Versionamento da API (Bônus 3)
+
+Estratégia adotada: **URI Path Versioning** (`/api/v1/...`)
+
+**Por quê?**
+- Visível e explícito — qualquer desenvolvedor entende sem documentação
+- Fácil de rotear no nginx/gateway por prefixo
+- Compatível com cache HTTP (URLs diferentes = recursos diferentes)
+- Sem conflito com headers Accept
+
+Para adicionar v2 sem quebrar v1: criar `AgendaControllerV2` em `/api/v2/agendas`, mantendo v1 funcionando em paralelo durante a migração.
+
+---
+
+## Decisões de design
+
+- **H2 modo arquivo** por padrão: zero dependências externas para rodar localmente, dados persistidos entre restarts
+- **Spring profiles** (dev/prod/perf): mesmo código, configurações diferentes via variável de ambiente
+- **Unique constraint** na tabela `votes` (agenda_id + associate_cpf): safety net contra voto duplo por race condition, independente da validação na aplicação
+- **DataIntegrityViolationException** tratada no GlobalExceptionHandler: garante 409 amigável mesmo sob alta concorrência
+- **@Scheduled** para fechar sessões: simplicidade — não requer fila de mensagens para o escopo do exercício
+- **CPF Facade aleatória**: implementa a spec do Bônus 1 com validação estrutural real (algoritmo dos dígitos verificadores) + aleatoriedade no serviço externo fake
+
+---
+
+## Tarefas Bônus implementadas
+
+- **Bônus 1** ✅ — `CpfValidationFacade`: valida estrutura do CPF + retorna `ABLE_TO_VOTE`/`UNABLE_TO_VOTE` aleatoriamente, 404 para CPF inválido
+- **Bônus 2** ✅ — Gatling com 3 cenários (smoke/load/stress), índices de banco, cache de resultados, HikariCP pool
+- **Bônus 3** ✅ — URI path versioning (`/api/v1/`), justificativa documentada acima
+
+---
+
+## Otimizações de performance
+
+**Banco de dados:**
+- Índice composto `(agenda_id, associate_cpf)` — query de checagem de voto duplicado
+- Índice `(agenda_id, choice)` — COUNT queries de contagem
+- Índice em `end_time` — scheduler de sessões expiradas
+- Batch insert no Hibernate (`batch_size: 50`)
+
+**Aplicação:**
+- `existsByAgendaIdAndAssociateCpf()` gera `SELECT COUNT(1)` sem carregar entidade
+- Cache de resultados (`@Cacheable`) com eviction automático a cada novo voto
+- HikariCP: `maximum-pool-size: 50`
+- Tomcat: 200 threads de worker

@@ -1,0 +1,94 @@
+version: '3.9'
+
+# =============================================================================
+# OPÇÃO 1 — Perfil "dev": H2 em arquivo + volume Docker
+#   docker-compose up
+#   Dados salvos em: volume "h2-data"
+#
+# OPÇÃO 2 — Perfil "prod": PostgreSQL
+#   docker-compose --profile prod up
+#   Dados salvos em: volume "pg-data"
+# =============================================================================
+
+services:
+
+  # ---------- Backend (dev: H2 em arquivo) ----------
+  backend:
+    build: ./backend
+    container_name: voting-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    volumes:
+      - h2-data:/app/data        # ← H2 persiste aqui ao desligar
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    profiles: ["", "dev"]
+
+  # ---------- Backend (prod: PostgreSQL) ----------
+  backend-prod:
+    build: ./backend
+    container_name: voting-backend-prod
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: votingdb
+      DB_USER: voting
+      DB_PASS: voting123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ["prod"]
+
+  # ---------- PostgreSQL ----------
+  postgres:
+    image: postgres:16-alpine
+    container_name: voting-postgres
+    environment:
+      POSTGRES_DB: votingdb
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: voting123
+    volumes:
+      - pg-data:/var/lib/postgresql/data   # ← Postgres persiste aqui
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voting -d votingdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles: ["prod"]
+
+  # ---------- Frontend ----------
+  frontend:
+    build: ./frontend
+    container_name: voting-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    profiles: ["", "dev"]
+
+  frontend-prod:
+    build: ./frontend
+    container_name: voting-frontend-prod
+    ports:
+      - "80:80"
+    depends_on:
+      - backend-prod
+    profiles: ["prod"]
+
+volumes:
+  h2-data:
+    driver: local          # Pasta gerenciada pelo Docker em /var/lib/docker/volumes/
+  pg-data:
+    driver: local
