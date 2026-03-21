@@ -1,0 +1,62 @@
+# Profile: perf
+# Used during load/stress testing with Gatling.
+# Start with: mvn spring-boot:run -Dspring-boot.run.profiles=perf
+#
+# Key tuning vs default dev profile:
+#   - H2 in-memory (fastest possible, no disk I/O during tests)
+#   - HikariCP pool sized for concurrent load
+#   - Tomcat threads increased to handle burst concurrency
+#   - SQL logging disabled (huge overhead under load)
+#   - Cache enabled for result reads
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:votingperfdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+    hikari:
+      maximum-pool-size: 50        # handle up to 50 concurrent DB operations
+      minimum-idle: 10
+      connection-timeout: 5000
+      idle-timeout: 30000
+      max-lifetime: 60000
+      pool-name: VotingHikariPool
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop        # fresh schema on every test run
+    show-sql: false                # never log SQL during load tests
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          batch_size: 50           # batch inserts for bulk vote scenarios
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 200                     # default is 200, keep for stress test
+      min-spare: 20
+    accept-count: 100              # queue for connections above max threads
+    connection-timeout: 10000
+
+spring.cache:
+  type: simple
+
+logging:
+  level:
+    com.voting: WARN               # only warnings/errors during load test
+    org.springframework: WARN
+    org.hibernate: WARN
+
+# Desabilita validação estrutural de CPF para permitir CPFs sequenciais do Gatling
+cpf:
+  validation:
+    strict: false
