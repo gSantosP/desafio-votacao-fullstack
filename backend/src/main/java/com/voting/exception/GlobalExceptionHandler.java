@@ -1,6 +1,7 @@
 package com.voting.exception;
 
 import com.voting.dto.VotingDTOs;
+import com.voting.facade.CpfValidationFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -53,16 +54,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles invalid/rejected CPF from the external validation facade.
+     * Returns 404 as per the Bonus Task 1 specification.
+     */
+    @ExceptionHandler(CpfValidationFacade.CpfNotFoundException.class)
+    public ResponseEntity<VotingDTOs.ErrorResponse> handleCpfNotFound(CpfValidationFacade.CpfNotFoundException ex) {
+        log.warn("CPF not found or invalid: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(buildError(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage()));
+    }
+
+    /**
      * Handles race condition on duplicate votes.
-     *
-     * Scenario: two concurrent requests from the same CPF pass the
-     * existsByAgendaIdAndAssociateCpf() check simultaneously before either
-     * is persisted. The second INSERT hits the unique constraint
-     * (agenda_id, associate_cpf) and throws DataIntegrityViolationException.
-     *
-     * The @UniqueConstraint on the Vote entity is the last line of defense.
-     * This handler converts the DB error into a meaningful 409 response
-     * instead of leaking a 500 Internal Server Error to the client.
+     * Two concurrent requests from the same CPF may pass the existence check
+     * simultaneously. The unique constraint on (agenda_id, associate_cpf)
+     * catches this at DB level and this handler converts it to a clean 409.
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<VotingDTOs.ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
