@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:votingtestdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+# Disable CPF strict validation in tests (mocked via @MockBean anyway)
+cpf:
+  validation:
+    strict: false
+
+logging:
+  level:
+    com.voting: WARN
+    org.springframework: WARN
