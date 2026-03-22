@@ -46,7 +46,7 @@ mvn spring-boot:run
 cd frontend
 npm install
 #(Caso não funcione, use:)
-npm install --ignore-scripts
+npm install --ignore-scripts # <- Caso esteja no Windows use essa flag direto.
 #(Caso não funcione, use:)
 npx vite --debug
 #(Caso não funcione, use:)
