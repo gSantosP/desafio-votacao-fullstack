@@ -1,6 +1,6 @@
 # 🗳️ Sistema de Votação Cooperativa
 
-> 🌐 **Demo ao vivo:** [Frontend](https://desafio-votacao-fullstack-two.vercel.app) | [API Swagger](https://desafio-votacao-fullstack-production.up.railway.app/swagger-ui.html)
+<!--- > 🌐 **Demo ao vivo:** [Frontend](https://desafio-votacao-fullstack-two.vercel.app) | [API Swagger](https://desafio-votacao-fullstack-production.up.railway.app/swagger-ui.html) --->
 
 API REST + Frontend React para gerenciar sessões de votação em assembleias cooperativas.
 
